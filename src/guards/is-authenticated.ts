@@ -1,20 +1,37 @@
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
 import { useAuthStore } from '@/stores/authStore';
-import { AuthStatus } from '@/interfaces/auth-enum';
+
 
 const isAuthenticated = async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
-  next: NavigationGuardNext,
+  next: NavigationGuardNext
 ) => {
   const authStore = useAuthStore();
-  console.log(authStore.authStatus);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  authStore.authStatus === AuthStatus.Checking ? next({ name: 'login' }) : next();
+  // Si se está verificando el estado de autenticación, permite que la navegación continúe
+  if (authStore.isChecking) {
+    return next(); // Deja que la navegación continue mientras se verifica el estado
+  }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  authStore.authStatus === AuthStatus.Unauthenticated ? next({ name: 'login' }) : next();
+  // Si ya está autenticado y trata de acceder a la ruta de login, redirigirlo al dashboard o a otra ruta
+  if (authStore.isAuthenticated && to.name === 'login') {
+    return next({ name: 'dashboard' }); // Redirigir al dashboard si ya está autenticado
+  }
+
+  // Si no está autenticado, permite que el usuario acceda a la ruta de login
+  console.log(authStore.isUnAuthenticated)
+  if (authStore.isUnAuthenticated && to.name === 'login') {
+    return next(); // Permite el acceso a la página de login
+  }
+
+  // Si no está autenticado y trata de acceder a una ruta protegida, redirigirlo a login
+  if (authStore.isUnAuthenticated) {
+    return next({ name: 'login' });
+  }
+
+  // Si está autenticado y trata de acceder a una ruta protegida, permite que la navegación continúe
+  next();
 };
 
 export default isAuthenticated;

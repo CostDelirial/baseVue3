@@ -1,45 +1,38 @@
-import type { IUser } from '@/interfaces/user.interface';
 import { isAxiosError } from 'axios';
 import { soporteApi } from '@/apis/soporteApi';
-
-interface CheckingError {
+import type { AuthResponse, IUser } from '@/interfaces';
+interface CheckError {
   ok: false;
 }
-
-interface ChekingSucces {
+interface CheckSuccess {
   ok: true;
   user: IUser;
   token: string;
 }
 
-export interface IAuthResponse {
-  ok: true;
-  user: IUser;
-  token: string;
-}
 
-export const chackAuthAction = async (): Promise<CheckingError | ChekingSucces> => {
+export const checkAuthAction = async (): Promise<CheckError | CheckSuccess> => {
   try {
     const localToken = localStorage.getItem('token');
-    if (
-      localToken === '' ||
-      localToken === null ||
-      localToken === undefined ||
-      localToken.length < 10
-    ) {
+    if (localToken && localToken.length < 10) {
       return { ok: false };
     }
 
-    const { data } = await soporteApi.get<IAuthResponse>('/usuarioApp/datos/user');
+    const { data } = await soporteApi.get<AuthResponse>('/usuarioApp/datos/user');
+
     return {
       ok: true,
       user: data.user,
-      token: data.token,
+      token: data.token
     };
-  } catch (err) {
-    if (isAxiosError(err) && err.response?.status === 401) {
-      return { ok: false };
+
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 401) {
+      return {
+        ok: false,
+      };
     }
-    throw new Error('Error ocurred');
+
+    throw new Error('No se pudo verificar la sesión');
   }
 };

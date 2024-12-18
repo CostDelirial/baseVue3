@@ -2,28 +2,30 @@
   <RouterView />
 </template>
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { AuthStatus } from './interfaces/auth-enum';
 import { useAuthStore } from './stores/authStore';
+import { onMounted } from 'vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute()
+
+onMounted(() => {
+  if (authStore.authStatus === AuthStatus.Checking) {
+    authStore.checkAuthStatus();
+  }
+});
 
 authStore.$subscribe(
   (_, state) => {
-    if (state.authStatus === AuthStatus.Unauthenticated) {
-      console.log('salri a login siempre');
-      router.replace({ name: 'login' });
-      return;
-    }
-    if (state.authStatus === AuthStatus.Authenticated) {
-      console.log('entrar a home siempre');
+    if (state.authStatus === AuthStatus.Authenticated && route.path.includes('/auth')) {
+      // Si ya está autenticado y está en una ruta de autenticación, redirige al dashboard
       router.replace({ name: 'dashboard' });
-      return;
     }
   },
   {
-    immediate: true,
-  },
+    immediate: true, // Llamar inmediatamente al suscribirse
+  }
 );
 </script>
